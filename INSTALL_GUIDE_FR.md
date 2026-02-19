@@ -52,7 +52,28 @@ Avant de commencer, assurez-vous que :
 
 ---
 
-## ✅ 4. Tester votre implémentation
+## 🛡️ 4. Politique de sécurité du contenu (CSP)
+
+Si votre site web utilise une **Politique de sécurité du contenu (CSP)**, vous devez ajouter les domaines suivants à votre liste blanche pour garantir le bon fonctionnement de la balise Click2Buy :
+
+- **Chargement du script :** `script-src rs.clic2buy.com`
+- **Accès aux cookies (Iframe) :** `frame-src t.clic2buy.com`
+- **Collecte de données :** `connect-src analytics.clic2buy.com`
+
+Alternativement, vous pouvez autoriser notre domaine racine pour toutes les directives : `*.clic2buy.com`.
+
+Exemple d'en-tête CSP :
+```http
+Content-Security-Policy: script-src 'self' rs.clic2buy.com; frame-src 'self' t.clic2buy.com; connect-src 'self' analytics.clic2buy.com;
+```
+ou 
+```http
+Content-Security-Policy: script-src 'self' *.clic2buy.com; frame-src 'self' *.clic2buy.com; connect-src 'self' *.clic2buy.com;
+```
+
+---
+
+## ✅ 5. Tester votre implémentation
 
 1. Cliquez sur le bouton **Prévisualiser** dans GTM pour lancer le Tag Assistant.
 2. Effectuez un achat de test sur votre site.
@@ -62,6 +83,6 @@ Avant de commencer, assurez-vous que :
 
 ---
 
-## 🚀 5. Publier
+## 🚀 6. Publier
 
 Une fois que vous avez vérifié que la balise fonctionne correctement, cliquez sur **Envoyer** dans GTM pour publier vos modifications sur votre site en production.

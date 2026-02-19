@@ -1,3 +1,4 @@
+
 [Voir la version française 🇫🇷](INSTALL_GUIDE_FR.md)
 
 ---
@@ -52,7 +53,28 @@ Before starting, ensure that:
 
 ---
 
-## ✅ 4. Testing your Implementation
+## 🛡️ 4. Content Security Policy (CSP)
+
+If your website uses a **Content Security Policy (CSP)**, you must whitelist the following domains to ensure the Click2Buy tag works correctly:
+
+- **Script Loading:** `script-src rs.clic2buy.com`
+- **Cookie Access (Iframe):** `frame-src t.clic2buy.com`
+- **Data Collection:** `connect-src analytics.clic2buy.com`
+
+Alternatively, you can whitelist our root domain for all directives: `*.clic2buy.com`.
+
+Example CSP header:
+```http
+Content-Security-Policy: script-src 'self' rs.clic2buy.com; frame-src 'self' t.clic2buy.com; connect-src 'self' analytics.clic2buy.com;
+```
+or 
+```http
+Content-Security-Policy: script-src 'self' *.clic2buy.com; frame-src 'self' *.clic2buy.com; connect-src 'self' *.clic2buy.com;
+```
+
+---
+
+## ✅ 5. Testing your Implementation
 
 1. Click the **Preview** button in GTM to launch the Tag Assistant.
 2. Complete a test purchase on your website.
@@ -62,6 +84,6 @@ Before starting, ensure that:
 
 ---
 
-## 🚀 5. Publish
+## 🚀 6. Publish
 
 Once you have verified the tag is working correctly, click **Submit** in GTM to publish your changes to the live site.
