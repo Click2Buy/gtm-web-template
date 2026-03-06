@@ -20,7 +20,7 @@ Before starting, ensure that:
 
 ## 📥 1. Import the Template
 
-1. Download the `template.tpl` file from this repository.
+1. Download the `template.tpl` file sent as attachment, or from this repository.
 2. Open your **Google Tag Manager** web container.
 3. In the left sidebar, click on **Templates**.
 4. In the **Tag Templates** section, click **New**.

@@ -19,7 +19,7 @@ Avant de commencer, assurez-vous que :
 
 ## 📥 1. Importer le modèle (Template)
 
-1. Téléchargez le fichier `template.tpl` depuis ce dépôt GitHub.
+1. Téléchargez le fichier `template.tpl` fourni en pièce-jointe, ou bien depuis ce dépôt GitHub.
 2. Ouvrez votre conteneur **Google Tag Manager** (Web).
 3. Dans la barre latérale gauche, cliquez sur **Modèles**.
 4. Dans la section **Modèles de balises**, cliquez sur **Nouveau**.
@@ -36,7 +36,7 @@ Avant de commencer, assurez-vous que :
 4. Entrez votre **Clé Retailer Click2Buy** (fournie par Click2Buy).
 5. **Data Source :**
    - Laissez sur **Standard** si vous suivez le schéma e-commerce GA4 (`ecommerce`).
-   - Sélectionnez **Variable personnalisée** si vos données d'achat sont stockées dans une variable différente de la couche de données.
+   - Sélectionnez **Variable personnalisée** si vos données d'achat sont stockées dans une variable différente du data layer.
 
 ---
 
