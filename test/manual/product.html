@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product — GTM template test</title>
+  <script src="config.js"></script>
+  <script src="shop.js"></script>
+  <script>
+    testShop.viewItem();
+    loadGtm();
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanilla-cookieconsent@3.1.0/dist/cookieconsent.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/vanilla-cookieconsent@3.1.0/dist/cookieconsent.umd.js"></script>
+  <script defer src="page.js"></script>
+  <link rel="stylesheet" href="shop.css">
+</head>
+<body>
+  <nav>
+    <a href="landing.html?c2bm=m%3Awidget%3Bcid%3Atest-gtm">Landing (with c2bm)</a>
+    <a href="product.html" aria-current="page">Product</a>
+    <a href="confirmation.html">Confirmation</a>
+    <a href="confirmation.html?early=1">Confirmation (early purchase)</a>
+  </nav>
+
+  <h1>Product page</h1>
+  <p class="hint">
+    A <code>view_item</code> with an <code>ecommerce</code> object is pushed at page load. The script must be loaded,
+    but <code>C2B.q</code> must stay empty and no request must be sent to <code>analytics.clic2buy.com</code>.
+  </p>
+
+  <table id="status"></table>
+
+  <button data-action="view-item">Push view_item again</button>
+  <button data-action="preferences">Cookie preferences</button>
+</body>
+</html>

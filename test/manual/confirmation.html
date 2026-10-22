@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirmation — GTM template test</title>
+  <script src="config.js"></script>
+  <script src="shop.js"></script>
+  <script>
+    // ?early=1: purchase pushed before GTM and the Click2Buy script are loaded (queued, processed at script start)
+    if (new URLSearchParams(location.search).has('early')) {
+      testShop.purchase();
+    }
+    loadGtm();
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanilla-cookieconsent@3.1.0/dist/cookieconsent.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/vanilla-cookieconsent@3.1.0/dist/cookieconsent.umd.js"></script>
+  <script defer src="page.js"></script>
+  <link rel="stylesheet" href="shop.css">
+</head>
+<body>
+  <nav>
+    <a href="landing.html?c2bm=m%3Awidget%3Bcid%3Atest-gtm">Landing (with c2bm)</a>
+    <a href="product.html">Product</a>
+    <a href="confirmation.html" aria-current="page">Confirmation</a>
+    <a href="confirmation.html?early=1">Confirmation (early purchase)</a>
+  </nav>
+
+  <h1>Order confirmation</h1>
+  <p class="hint">
+    <strong>Script already loaded:</strong> wait for "Click2Buy script loaded: yes", then click "Push purchase".
+    <code>C2B.validationProcess</code> must still be a function, and a <code>POST</code> to
+    <code>analytics…/events/from-tracking-param</code> must be sent.<br>
+    <strong>Early purchase</strong> (<code>?early=1</code>): the purchase is pushed before GTM, and must be sent when the script starts.
+  </p>
+
+  <table id="status"></table>
+
+  <button data-action="purchase">Push purchase</button>
+  <button data-action="preferences">Cookie preferences</button>
+</body>
+</html>
