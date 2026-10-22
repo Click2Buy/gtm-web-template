@@ -40,6 +40,25 @@ ___TEMPLATE_PARAMETERS___
   },
   {
     "type": "SELECT",
+    "name": "tagType",
+    "displayName": "Tag type",
+    "macrosInSelect": false,
+    "selectItems": [
+      {
+        "value": "pageView",
+        "displayValue": "Page view — loads the script only"
+      },
+      {
+        "value": "conversion",
+        "displayValue": "Conversion — sends the order data"
+      }
+    ],
+    "simpleValueType": true,
+    "defaultValue": "conversion",
+    "help": "Use \"Page view\" on all pages, so that Click2Buy can read the attribution parameter when the visitor lands on your website. Use \"Conversion\" on your purchase event."
+  },
+  {
+    "type": "SELECT",
     "name": "dataSource",
     "displayName": "Data source",
     "macrosInSelect": true,
@@ -49,7 +68,14 @@ ___TEMPLATE_PARAMETERS___
         "displayValue": "Standard (dataLayer \"ecommerce\")"
       }
     ],
-    "simpleValueType": true
+    "simpleValueType": true,
+    "enablingConditions": [
+      {
+        "paramName": "tagType",
+        "paramValue": "conversion",
+        "type": "EQUALS"
+      }
+    ]
   }
 ]
 
@@ -58,32 +84,37 @@ ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
 const injectScript = require('injectScript');
 const copyFromDataLayer = require('copyFromDataLayer');
+const createQueue = require('createQueue');
 const setInWindow = require('setInWindow');
-const copyFromWindow = require('copyFromWindow');
 
 const retailerKey = data.retailerKey;
 const scriptUrl = 'https://rs.clic2buy.com/retailers/' + retailerKey + '.js';
 
-// --- 1. DATA COLLECTION ---
-let ecommerceData;
+// Tags created before the "Tag type" parameter have no value: keep the conversion behaviour
+const tagType = data.tagType || 'conversion';
 
-if (data.dataSource === 'standard') {
-  // Use the standard GA4/UA ecommerce object from dataLayer
-  ecommerceData = copyFromDataLayer('ecommerce');
-} else {
-  // If the user selected a GTM variable, data.dataSource 
-  // already contains the value of that variable.
-  ecommerceData = data.dataSource;
-}
+if (tagType === 'conversion') {
+  // --- 1. DATA COLLECTION ---
+  let ecommerceData;
 
-// --- 2. QUEUING ---
-let C2B = copyFromWindow('C2B') || {};
-if (!C2B.q) { C2B.q = []; }
+  if (data.dataSource === 'standard') {
+    // Use the standard GA4/UA ecommerce object from dataLayer
+    ecommerceData = copyFromDataLayer('ecommerce');
+  } else {
+    // If the user selected a GTM variable, data.dataSource
+    // already contains the value of that variable.
+    ecommerceData = data.dataSource;
+  }
 
-if (ecommerceData) {
-  // Push the raw object into the command queue
-  C2B.q.push([ecommerceData]); 
-  setInWindow('C2B', C2B, true);
+  // --- 2. QUEUING ---
+  if (ecommerceData) {
+    // createQueue does not create the parent object: create window.C2B when the script is not loaded yet,
+    // never overwriting it (false), as the retailer script may already be loaded
+    setInWindow('C2B', {}, false);
+    // Push the raw object into the command queue, without touching the rest of window.C2B
+    // (the retailer script may already be loaded and process the push right away)
+    createQueue('C2B.q')([ecommerceData]);
+  }
 }
 
 // --- 3. SCRIPT INJECTION ---
@@ -128,6 +159,45 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
+                    "string": "C2B.q"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
                     "string": "C2B"
                   },
                   {
@@ -140,7 +210,7 @@ ___WEB_PERMISSIONS___
                   },
                   {
                     "type": 8,
-                    "boolean": true
+                    "boolean": false
                   }
                 ]
               }
@@ -232,10 +302,32 @@ scenarios:
     });
 
     runCode(mockData);
+- name: Page view test - Loads the script without pushing data
+  code: |-
+    const mockData = {
+      retailerKey: 'MY-RETAILER-ID',
+      tagType: 'pageView'
+    };
+
+    mock('copyFromDataLayer', (key) => {
+      if (key === 'ecommerce') return { transaction_id: 'VIEW_ITEM' };
+    });
+
+    mock('injectScript', (url, onSuccess, onFailure, tagId) => {
+      assertThat(url).isEqualTo('https://rs.clic2buy.com/retailers/MY-RETAILER-ID.js');
+      onSuccess();
+    });
+
+    runCode(mockData);
+
+    assertApi('copyFromDataLayer').wasNotCalled();
+    assertApi('createQueue').wasNotCalled();
+    assertApi('gtmOnSuccess').wasCalled();
 - name: Purchase test - Standard datasource
   code: |-
     const mockData = {
       retailerKey: 'ABC',
+      tagType: 'conversion',
       dataSource: 'standard'
     };
 
@@ -243,20 +335,102 @@ scenarios:
       if (key === 'ecommerce') return { transaction_id: 'T1' };
     });
 
-    mock('setInWindow', (key, value) => {
-      if (key === 'C2B') {
-        assertThat(value.q[0][0].transaction_id).isEqualTo('T1');
-      }
+    const pushed = [];
+    mock('createQueue', (key) => {
+      assertThat(key).isEqualTo('C2B.q');
+      return (item) => { pushed.push(item); };
     });
 
     mock('injectScript', (url, onSuccess) => onSuccess());
     runCode(mockData);
+
+    assertThat(pushed.length).isEqualTo(1);
+    assertThat(pushed[0][0].transaction_id).isEqualTo('T1');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Purchase test - Creates the C2B global without overwriting it
+  code: |-
+    const mockData = {
+      retailerKey: 'ABC',
+      tagType: 'conversion',
+      dataSource: 'standard'
+    };
+
+    mock('copyFromDataLayer', (key) => {
+      if (key === 'ecommerce') return { transaction_id: 'T3' };
+    });
+
+    // createQueue('C2B.q') needs window.C2B: it must be created only when missing (script not loaded yet)
+    const calls = [];
+    mock('setInWindow', (key, value, overrideExisting) => {
+      calls.push({ key: key, overrideExisting: overrideExisting });
+      return true;
+    });
+    mock('createQueue', (key) => (item) => {});
+    mock('injectScript', (url, onSuccess) => onSuccess());
+    runCode(mockData);
+
+    assertThat(calls.length).isEqualTo(1);
+    assertThat(calls[0].key).isEqualTo('C2B');
+    assertThat(calls[0].overrideExisting).isEqualTo(false);
 - name: Purchase test - Custom datasource
-  code: "const mockData = {\n  retailerKey: 'ABC',\n  // When a user selects a variable\
-    \ in a dropdown, GTM passes \n  // its resolved value directly to the 'dataSource'\
-    \ property.\n  dataSource: { custom_id: 'C99' } \n};\n\nmock('setInWindow', (key,\
-    \ value) => {\n  if (key === 'C2B') {\n    assertThat(value.q[0][0].custom_id).isEqualTo('C99');\n\
-    \  }\n});\n\nmock('injectScript', (url, onSuccess) => onSuccess());\nrunCode(mockData);"
+  code: |-
+    const mockData = {
+      retailerKey: 'ABC',
+      tagType: 'conversion',
+      // When a user selects a variable in a dropdown, GTM passes
+      // its resolved value directly to the 'dataSource' property.
+      dataSource: { custom_id: 'C99' }
+    };
+
+    const pushed = [];
+    mock('createQueue', (key) => {
+      assertThat(key).isEqualTo('C2B.q');
+      return (item) => { pushed.push(item); };
+    });
+
+    mock('injectScript', (url, onSuccess) => onSuccess());
+    runCode(mockData);
+
+    assertThat(pushed.length).isEqualTo(1);
+    assertThat(pushed[0][0].custom_id).isEqualTo('C99');
+- name: Purchase test - No data
+  code: |-
+    const mockData = {
+      retailerKey: 'ABC',
+      tagType: 'conversion',
+      dataSource: 'standard'
+    };
+
+    mock('copyFromDataLayer', (key) => undefined);
+    mock('injectScript', (url, onSuccess) => onSuccess());
+    runCode(mockData);
+
+    assertApi('createQueue').wasNotCalled();
+    assertApi('injectScript').wasCalled();
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Purchase test - Missing tag type (existing installations)
+  code: |-
+    // Tags created before the "Tag type" parameter have no tagType value
+    const mockData = {
+      retailerKey: 'ABC',
+      dataSource: 'standard'
+    };
+
+    mock('copyFromDataLayer', (key) => {
+      if (key === 'ecommerce') return { transaction_id: 'T2' };
+    });
+
+    const pushed = [];
+    mock('createQueue', (key) => {
+      assertThat(key).isEqualTo('C2B.q');
+      return (item) => { pushed.push(item); };
+    });
+
+    mock('injectScript', (url, onSuccess) => onSuccess());
+    runCode(mockData);
+
+    assertThat(pushed.length).isEqualTo(1);
+    assertThat(pushed[0][0].transaction_id).isEqualTo('T2');
 
 
 ___NOTES___
