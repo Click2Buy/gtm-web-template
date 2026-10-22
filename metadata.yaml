@@ -1,5 +1,9 @@
 homepage: "https://www.click2buy.com"
 documentation: "https://github.com/Click2Buy/gtm-web-template/blob/master/README.md"
 versions:
+  - sha: 31e97c2d144d04fd185e64c96342675aa1907c08
+    changeNotes: |2-
+      New "Tag type" parameter: "Page view" loads the Click2Buy script on every page (first party attribution), "Conversion" sends the order data.
+      The tag no longer overwrites window.C2B when the Click2Buy script is already loaded.
   - sha: 0fcdee73b18867e02f32d74519145086fdec71c0
     changeNotes: Initial release
